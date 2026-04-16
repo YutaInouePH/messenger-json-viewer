@@ -12,6 +12,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
+    blobZipUrl: '',
     digestAuth: {
       username: process.env.DIGEST_AUTH_USERNAME,
       password: process.env.DIGEST_AUTH_PASSWORD,
