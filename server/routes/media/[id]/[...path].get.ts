@@ -1,6 +1,6 @@
 import { createReadStream, statSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { lookup as mimeLookup } from 'mime'
+import mime from 'mime'
 import { lookupSession as getSession, isExpired } from '../../../utils/sessionStore'
 import { safeJoin } from '../../../utils/parser'
 
@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Not a file' })
   }
 
-  const mimeType = mimeLookup(resolved) || 'application/octet-stream'
+  const mimeType = mime.getType(resolved) || 'application/octet-stream'
   setHeader(event, 'Content-Type', mimeType)
   setHeader(event, 'Content-Length', String(stat.size))
   setHeader(event, 'Cache-Control', 'private, max-age=3600')

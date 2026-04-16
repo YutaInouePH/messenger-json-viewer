@@ -1,6 +1,6 @@
 import { statSync } from 'node:fs'
 import { resolve, join, normalize } from 'node:path'
-import { lookup as mimeLookup } from 'mime'
+import mime from 'mime'
 import type {
   RawThread,
   RawMessage,
@@ -43,7 +43,7 @@ function resolveMedia(raw: RawMedia, sessionDir: string): MediaAsset | null {
     // file might not exist (corrupt zip or wrong path)
   }
 
-  const mimeType = mimeLookup(resolved) || 'application/octet-stream'
+  const mimeType = mime.getType(resolved) || 'application/octet-stream'
   return { uri: raw.uri, resolvedPath: resolved, mimeType, size }
 }
 
