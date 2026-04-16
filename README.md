@@ -49,6 +49,22 @@ npm install
 pnpm install
 ```
 
+Create a local `.env` file (do not commit it) with digest auth credentials:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+
+- `DIGEST_AUTH_USERNAME`
+- `DIGEST_AUTH_PASSWORD`
+- `DIGEST_AUTH_SECRET`
+
+Optional:
+
+- `DIGEST_AUTH_REALM` (defaults to `Messenger JSON Viewer`)
+
 ## Development Server
 
 ```bash
@@ -72,4 +88,3 @@ npm run preview
 - [Nuxt UI](https://ui.nuxt.com) — component system
 - [unzipper](https://www.npmjs.com/package/unzipper) — zip extraction
 - [mime](https://www.npmjs.com/package/mime) — MIME type detection for media serving
-
