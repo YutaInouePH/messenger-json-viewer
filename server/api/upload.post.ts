@@ -14,7 +14,7 @@ import type { ImportSession, SessionIndex } from '../utils/types'
 
 const MAX_UPLOAD_BYTES = 500 * 1024 * 1024 // 500 MB
 
-/** Recursively find all message_*.json files inside sessionDir */
+/** Recursively find all Messenger JSON files (e.g. message_1.json or "First Last _47.json") inside sessionDir */
 function findMessageJsonFiles(dir: string): string[] {
   const results: string[] = []
   let entries: string[]
@@ -28,7 +28,7 @@ function findMessageJsonFiles(dir: string): string[] {
     const stat = statSync(full)
     if (stat.isDirectory()) {
       results.push(...findMessageJsonFiles(full))
-    } else if (/^message_\d+\.json$/i.test(basename(full))) {
+    } else if (/^.+_\d+\.json$/i.test(basename(full))) {
       results.push(full)
     }
   }
