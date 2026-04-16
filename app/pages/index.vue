@@ -1,76 +1,85 @@
+<script setup lang="ts">
+useSeoMeta({
+  title: 'Messenger JSON Viewer',
+  description: 'View your Facebook Messenger export locally. All data is temporary and auto-deleted after 1 hour.'
+})
+
+const { setSession, sessionId, expiresAt, restoreSession } = useSession()
+const router = useRouter()
+
+onMounted(() => {
+  restoreSession()
+  if (sessionId.value && expiresAt.value && Date.now() < expiresAt.value) {
+    router.push(`/sessions/${sessionId.value}`)
+  }
+})
+
+async function onUploaded(sid: string, exp: number, threadCount: number) {
+  setSession({ sessionId: sid, expiresAt: exp, threadCount })
+  await router.push(`/sessions/${sid}`)
+}
+</script>
+
 <template>
-  <div>
-    <UPageHero
-      title="Nuxt Starter Template"
-      description="A production-ready starter template powered by Nuxt UI. Build beautiful, accessible, and performant applications in minutes, not hours."
-      :links="[{
-        label: 'Get started',
-        to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-        target: '_blank',
-        trailingIcon: 'i-lucide-arrow-right',
-        size: 'xl'
-      }, {
-        label: 'Use this template',
-        to: 'https://github.com/nuxt-ui-templates/starter',
-        target: '_blank',
-        icon: 'i-simple-icons-github',
-        size: 'xl',
-        color: 'neutral',
-        variant: 'subtle'
-      }]"
-    />
-
-    <UPageSection
-      id="features"
-      title="Everything you need to build modern Nuxt apps"
-      description="Start with a solid foundation. This template includes all the essentials for building production-ready applications with Nuxt UI's powerful component system."
-      :features="[{
-        icon: 'i-lucide-rocket',
-        title: 'Production-ready from day one',
-        description: 'Pre-configured with TypeScript, ESLint, Tailwind CSS, and all the best practices. Focus on building features, not setting up tooling.'
-      }, {
-        icon: 'i-lucide-palette',
-        title: 'Beautiful by default',
-        description: 'Leveraging Nuxt UI\'s design system with automatic dark mode, consistent spacing, and polished components that look great out of the box.'
-      }, {
-        icon: 'i-lucide-zap',
-        title: 'Lightning fast',
-        description: 'Optimized for performance with SSR/SSG support, automatic code splitting, and edge-ready deployment. Your users will love the speed.'
-      }, {
-        icon: 'i-lucide-blocks',
-        title: '100+ components included',
-        description: 'Access Nuxt UI\'s comprehensive component library. From forms to navigation, everything is accessible, responsive, and customizable.'
-      }, {
-        icon: 'i-lucide-code-2',
-        title: 'Developer experience first',
-        description: 'Auto-imports, hot module replacement, and TypeScript support. Write less boilerplate and ship more features.'
-      }, {
-        icon: 'i-lucide-shield-check',
-        title: 'Built for scale',
-        description: 'Enterprise-ready architecture with proper error handling, SEO optimization, and security best practices built-in.'
-      }]"
-    />
-
-    <UPageSection>
-      <UPageCTA
-        title="Ready to build your next Nuxt app?"
-        description="Join thousands of developers building with Nuxt and Nuxt UI. Get this template and start shipping today."
-        variant="subtle"
-        :links="[{
-          label: 'Start building',
-          to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-          target: '_blank',
-          trailingIcon: 'i-lucide-arrow-right',
-          color: 'neutral'
-        }, {
-          label: 'View on GitHub',
-          to: 'https://github.com/nuxt-ui-templates/starter',
-          target: '_blank',
-          icon: 'i-simple-icons-github',
-          color: 'neutral',
-          variant: 'outline'
-        }]"
+  <div class="min-h-[70vh] flex flex-col items-center justify-center gap-10 py-16 px-4">
+    <div class="text-center max-w-xl">
+      <UIcon
+        name="i-lucide-message-circle"
+        class="w-14 h-14 text-primary mx-auto mb-4"
       />
-    </UPageSection>
+      <h1 class="text-3xl font-bold text-highlighted mb-2">
+        Messenger JSON Viewer
+      </h1>
+      <p class="text-muted text-base leading-relaxed">
+        Upload your Facebook Messenger export (.zip) to browse your conversations.
+        Your data stays on <strong>this server only</strong> and is automatically deleted after <strong>1 hour</strong>.
+      </p>
+    </div>
+
+    <UploadZone @uploaded="onUploaded" />
+
+    <p class="text-xs text-muted max-w-md text-center leading-relaxed">
+      🔒 <strong>Privacy:</strong> Your data never leaves this server and is never stored permanently.
+      No account required. All files are deleted automatically after 1 hour.
+    </p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl w-full">
+      <div class="text-center">
+        <UIcon
+          name="i-lucide-upload"
+          class="w-8 h-8 text-primary mx-auto mb-2"
+        />
+        <p class="font-semibold text-sm text-highlighted">
+          1. Upload
+        </p>
+        <p class="text-xs text-muted mt-1">
+          Drop your Facebook export zip file
+        </p>
+      </div>
+      <div class="text-center">
+        <UIcon
+          name="i-lucide-list"
+          class="w-8 h-8 text-primary mx-auto mb-2"
+        />
+        <p class="font-semibold text-sm text-highlighted">
+          2. Browse Threads
+        </p>
+        <p class="text-xs text-muted mt-1">
+          Search and filter your conversations
+        </p>
+      </div>
+      <div class="text-center">
+        <UIcon
+          name="i-lucide-message-square"
+          class="w-8 h-8 text-primary mx-auto mb-2"
+        />
+        <p class="font-semibold text-sm text-highlighted">
+          3. Read Chats
+        </p>
+        <p class="text-xs text-muted mt-1">
+          View messages with media and reactions
+        </p>
+      </div>
+    </div>
   </div>
 </template>
