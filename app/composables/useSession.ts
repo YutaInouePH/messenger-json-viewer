@@ -9,7 +9,7 @@ interface SessionInfo {
 export function useSession() {
   const sessionId = useState<string | null>('sessionId', () => null)
   const expiresAt = useState<number | null>('expiresAt', () => null)
-  const threadCount = useState<number>(('threadCount'), () => 0)
+  const threadCount = useState<number>('threadCount', () => 0)
 
   function setSession(info: SessionInfo) {
     sessionId.value = info.sessionId

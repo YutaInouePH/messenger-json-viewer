@@ -33,7 +33,7 @@ function resolveMedia(raw: RawMedia, sessionDir: string): MediaAsset | null {
   const rel = normalize(raw.uri).replace(/^\/+/, '')
   // Guard against path traversal
   const resolved = resolve(sessionDir, rel)
-  if (!resolved.startsWith(sessionDir + '/') && resolved !== sessionDir) return null
+  if (!resolved.startsWith(sessionDir + '/')) return null
 
   let size = 0
   try {
@@ -150,6 +150,6 @@ export function mergeThreadChunks(chunks: ThreadIndex[], threadId: string): Thre
 export function safeJoin(rootDir: string, ...parts: string[]): string | null {
   const joined = join(rootDir, ...parts)
   const resolved = resolve(joined)
-  if (!resolved.startsWith(resolve(rootDir) + '/') && resolved !== resolve(rootDir)) return null
+  if (!resolved.startsWith(resolve(rootDir) + '/')) return null
   return resolved
 }

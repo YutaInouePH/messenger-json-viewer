@@ -1,4 +1,4 @@
-import { mkdirSync, readdirSync, statSync, writeFileSync, readFileSync } from 'node:fs'
+import { createWriteStream, mkdirSync, readdirSync, statSync, writeFileSync, readFileSync } from 'node:fs'
 import { join, basename, dirname } from 'node:path'
 import { tmpdir } from 'node:os'
 import { randomUUID } from 'node:crypto'
@@ -81,7 +81,7 @@ export default defineEventHandler(async (event) => {
       const safeName = file.path.replace(/\.\./g, '').replace(/^[/\\]+/, '')
       const destPath = join(sessionDir, safeName)
       // Ensure dest is inside sessionDir
-      if (!destPath.startsWith(sessionDir + '/') && destPath !== sessionDir) continue
+      if (!destPath.startsWith(sessionDir + '/')) continue
       mkdirSync(dirname(destPath), { recursive: true })
       const writeStream = createWriteStream(destPath)
       await pipeline(file.stream(), writeStream)
