@@ -1,64 +1,75 @@
-# Nuxt Starter Template
+# Messenger JSON Viewer
 
 [![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
 
-Use this template to get started with [Nuxt UI](https://ui.nuxt.com) quickly.
+A privacy-first web application to browse your [Facebook Messenger data export](https://www.facebook.com/help/212802592074644) locally.
+Upload your `.zip` export, browse threads, read messages with media, and all data is **automatically deleted after 1 hour**.
 
-- [Live demo](https://starter-template.nuxt.dev/)
-- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
+## Features
 
-<a href="https://starter-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png">
-    <img alt="Nuxt Starter Template" src="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png" width="830" height="466">
-  </picture>
-</a>
+- 📤 **Drag-and-drop upload** — upload your Facebook export zip (up to 500 MB)
+- 💬 **Thread list** — search and filter all your conversations
+- 📱 **Chat room view** — bubble-style messages with images, video, audio, reactions, and unsent message states
+- 🔒 **Privacy-first** — data lives only on the server temporarily; never persisted to a database
+- ⏱️ **1-hour auto-delete** — sessions expire after 60 minutes; both files and metadata are deleted
+- 🌐 **UTF-8 / Japanese text** — correct rendering of all Unicode characters from Facebook's latin1-encoded exports
+- 🖼️ **Media support** — images, videos, audio files, and generic attachments served through guarded routes
 
-> The starter template for Vue is on https://github.com/nuxt-ui-templates/starter-vue.
+## Data Lifecycle
 
-## Quick Start
+1. You upload a `.zip` file.
+2. The server creates a **temporary session directory** (in `/tmp/messenger-sessions/<sessionId>/`) and extracts your zip there.
+3. Messenger JSON files are parsed and indexed in memory.
+4. An **expiry time of `createdAt + 1 hour`** is attached to the session.
+5. All read APIs check expiry and return `410 Gone` for expired sessions.
+6. Opportunistic cleanup runs on every API request; expired session directories and all their contents (JSON + media files) are deleted together.
+7. You can also **manually delete your session** via the "Delete & Re-upload" button.
 
-```bash [Terminal]
-npm create nuxt@latest -- -t ui
-```
+> **Note:** "Delete after 1 hour" is best-effort. If the server process restarts before cleanup, in-memory session metadata is lost but the directory can be cleaned up by the OS or a future restart. For stricter guarantees, consider adding a startup cleanup that removes any `/tmp/messenger-sessions/` directories older than 1 hour.
 
-## Deploy your own
+## Limitations
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=starter&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fstarter&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fstarter-dark.png&demo-url=https%3A%2F%2Fstarter-template.nuxt.dev%2F&demo-title=Nuxt%20Starter%20Template&demo-description=A%20minimal%20template%20to%20get%20started%20with%20Nuxt%20UI.)
+- **Single-server only** — sessions are stored in process memory; not suitable for multi-instance deployments.
+- **Upload size** — capped at 500 MB per upload.
+- **No persistence** — refreshing after session expiry requires a re-upload.
+- **Media** — only media files bundled in the export zip are served; external links are displayed as text.
+
+## How to Export Your Messenger Data
+
+1. Go to **Facebook Settings → Your Facebook information → Download your information**.
+2. Select **Messages** (and optionally **Photos/Videos**).
+3. Choose **JSON format** and **Low quality** (for smaller file size).
+4. Download the `.zip` when ready and upload it here.
 
 ## Setup
 
-Make sure to install the dependencies:
-
 ```bash
+npm install
+# or
 pnpm install
 ```
 
 ## Development Server
 
-Start the development server on `http://localhost:3000`:
-
 ```bash
+npm run dev
+# or
 pnpm dev
 ```
 
-## Production
+Open [http://localhost:3000](http://localhost:3000).
 
-Build the application for production:
-
-```bash
-pnpm build
-```
-
-Locally preview production build:
+## Production Build
 
 ```bash
-pnpm preview
+npm run build
+npm run preview
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## Tech Stack
 
-## Renovate integration
+- [Nuxt 4](https://nuxt.com) — full-stack framework (`app/` + `server/`)
+- [Nuxt UI](https://ui.nuxt.com) — component system
+- [unzipper](https://www.npmjs.com/package/unzipper) — zip extraction
+- [mime](https://www.npmjs.com/package/mime) — MIME type detection for media serving
 
-Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
