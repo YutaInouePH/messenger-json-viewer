@@ -96,33 +96,47 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 422, statusMessage: 'No Messenger JSON files found in the uploaded zip' })
   }
 
-  // Group files by thread directory
-  const threadGroups = new Map<string, string[]>()
+  // Parse each JSON file first, then group chunks by (directory + threadName).
+  // This correctly handles both:
+  //   - Facebook raw format: multiple message_N.json files in one folder share the same title → merged as chunks
+  //   - Pre-processed format: each file is its own thread in a flat folder → kept separate
+  interface ParsedFile { file: string, parsed: ReturnType<typeof parseThreadJson> }
+  const parsedFiles: ParsedFile[] = []
   for (const file of jsonFiles) {
-    const threadDir = dirname(file)
-    const group = threadGroups.get(threadDir) ?? []
-    group.push(file)
-    threadGroups.set(threadDir, group)
+    let raw: unknown
+    try {
+      raw = JSON.parse(readFileSync(file, 'utf-8'))
+    } catch {
+      continue // skip malformed JSON
+    }
+    const parsed = parseThreadJson(raw, sessionDir)
+    if (parsed) parsedFiles.push({ file, parsed })
+  }
+
+  // Group by (parent directory, thread name) so chunks of the same Facebook thread are merged
+  // while distinct threads that happen to live in the same directory stay separate.
+  const threadGroups = new Map<string, typeof parsedFiles>()
+  for (const item of parsedFiles) {
+    const key = `${dirname(item.file)}\0${item.parsed!.summary.threadName}`
+    const group = threadGroups.get(key) ?? []
+    group.push(item)
+    threadGroups.set(key, group)
   }
 
   const threadMap = new Map<string, ReturnType<typeof mergeThreadChunks>>()
 
-  for (const [threadDir, files] of threadGroups.entries()) {
-    const chunks = []
-    for (const file of files) {
-      let raw: unknown
-      try {
-        raw = JSON.parse(readFileSync(file, 'utf-8'))
-      } catch {
-        continue // skip malformed JSON
-      }
-      const parsed = parseThreadJson(raw, sessionDir)
-      if (parsed) chunks.push(parsed)
-    }
-    if (chunks.length === 0) continue
-
-    // Use last segment of threadDir as thread id
-    const threadId = basename(threadDir)
+  for (const [key, items] of threadGroups.entries()) {
+    const chunks = items.map(i => i.parsed!)
+    // Derive a stable thread id: use the folder name for folder-per-thread layouts,
+    // or the threadName slug for flat layouts where multiple threads share a directory.
+    const firstFile = items[0]!.file
+    const folderName = basename(dirname(firstFile))
+    const threadName = chunks[0]!.summary.threadName
+    // If all files in this group are the only file in their directory, use the filename stem as id.
+    const siblingsInDir = parsedFiles.filter(p => dirname(p.file) === dirname(firstFile))
+    const threadId = siblingsInDir.length > 1
+      ? `${folderName}_${threadName.replace(/[^a-z0-9]/gi, '_')}`
+      : folderName
     const merged = mergeThreadChunks(chunks, threadId)
     threadMap.set(threadId, merged)
   }
