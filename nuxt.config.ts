@@ -11,6 +11,15 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  runtimeConfig: {
+    digestAuth: {
+      username: process.env.DIGEST_AUTH_USERNAME,
+      password: process.env.DIGEST_AUTH_PASSWORD,
+      realm: process.env.DIGEST_AUTH_REALM || 'Messenger JSON Viewer',
+      nonceSecret: process.env.DIGEST_AUTH_SECRET
+    }
+  },
+
   compatibilityDate: '2025-01-15',
 
   nitro: {
