@@ -69,19 +69,25 @@ function normalizeMessage(raw: RawMessage, sessionDir: string): Message {
     actor: decodeText(r.actor) ?? r.actor
   }))
 
-  let text: string | null = decodeText(raw.content ?? null)
+  // Support both Facebook raw (content, sender_name, timestamp_ms, is_unsent)
+  // and pre-processed camelCase format (text, senderName, timestamp, isUnsent)
+  const rawSenderName = raw.sender_name ?? raw.senderName ?? ''
+  const rawTimestamp = raw.timestamp_ms ?? raw.timestamp ?? 0
+  const rawIsUnsent = raw.is_unsent ?? raw.isUnsent ?? false
+
+  let text: string | null = decodeText(raw.content ?? raw.text ?? null)
   if (!text && raw.share?.share_text) text = decodeText(raw.share.share_text)
   if (!text && raw.share?.link) text = raw.share.link
 
   return {
     id: nextMsgId(),
-    senderName: decodeText(raw.sender_name) ?? raw.sender_name,
+    senderName: decodeText(rawSenderName) ?? rawSenderName,
     text,
-    timestamp: raw.timestamp_ms,
+    timestamp: rawTimestamp,
     type: raw.type ?? 'Generic',
     media: collectMedia(raw, sessionDir),
     reactions,
-    isUnsent: raw.is_unsent ?? false
+    isUnsent: rawIsUnsent
   }
 }
 
@@ -98,12 +104,16 @@ export function parseThreadJson(raw: unknown, sessionDir: string): ThreadIndex |
 
   const thread = obj as RawThread
 
+  // Participants can be objects {name} (Facebook raw) or plain strings (pre-processed)
   const participants: string[] = thread.participants
-    .filter(p => p && typeof p.name === 'string')
-    .map(p => decodeText(p.name) ?? p.name)
+    .map(p => (typeof p === 'string' ? p : p.name))
+    .filter((name): name is string => typeof name === 'string' && name.length > 0)
+    .map(name => decodeText(name) ?? name)
 
-  const title = thread.title
-    ? (decodeText(thread.title) ?? thread.title)
+  // Support both Facebook raw `title` and pre-processed `threadName`
+  const rawTitle = thread.title ?? thread.threadName
+  const title = rawTitle
+    ? (decodeText(rawTitle) ?? rawTitle)
     : participants.join(', ') || 'Unknown Thread'
 
   const messages: Message[] = thread.messages.map(m => normalizeMessage(m, sessionDir))

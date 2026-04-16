@@ -52,7 +52,7 @@ export interface SessionIndex {
   threads: Map<string, ThreadIndex>
 }
 
-// Raw Facebook Messenger JSON format
+// Raw Facebook Messenger JSON format (supports both Facebook export and pre-processed camelCase variants)
 export interface RawParticipant {
   name: string
 }
@@ -69,11 +69,16 @@ export interface RawReaction {
 }
 
 export interface RawMessage {
-  sender_name: string
-  timestamp_ms: number
+  // Facebook raw export uses snake_case; pre-processed exports use camelCase
+  sender_name?: string
+  senderName?: string
+  timestamp_ms?: number
+  timestamp?: number
   content?: string
+  text?: string
   type: string
   is_unsent?: boolean
+  isUnsent?: boolean
   reactions?: RawReaction[]
   photos?: RawMedia[]
   videos?: RawMedia[]
@@ -85,9 +90,11 @@ export interface RawMessage {
 }
 
 export interface RawThread {
-  participants: RawParticipant[]
+  // participants can be objects {name} (Facebook raw) or plain strings (pre-processed)
+  participants: Array<RawParticipant | string>
   messages: RawMessage[]
   title?: string
+  threadName?: string
   thread_type?: string
   thread_path?: string
   is_still_participant?: boolean
