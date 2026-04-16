@@ -11,10 +11,14 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  // NUXT_BLOB_ZIP_URL: Vercel Blob URL of a pre-uploaded messenger export zip.
-  // When set, the upload page is skipped and the zip is loaded automatically.
   runtimeConfig: {
-    blobZipUrl: ''
+    blobZipUrl: '',
+    digestAuth: {
+      username: process.env.DIGEST_AUTH_USERNAME,
+      password: process.env.DIGEST_AUTH_PASSWORD,
+      realm: process.env.DIGEST_AUTH_REALM || 'Messenger JSON Viewer',
+      nonceSecret: process.env.DIGEST_AUTH_SECRET
+    }
   },
 
   compatibilityDate: '2025-01-15',
