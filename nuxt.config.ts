@@ -11,6 +11,12 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  // NUXT_BLOB_ZIP_URL: Vercel Blob URL of a pre-uploaded messenger export zip.
+  // When set, the upload page is skipped and the zip is loaded automatically.
+  runtimeConfig: {
+    blobZipUrl: ''
+  },
+
   compatibilityDate: '2025-01-15',
 
   nitro: {
