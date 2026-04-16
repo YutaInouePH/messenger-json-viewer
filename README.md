@@ -64,6 +64,11 @@ Required variables:
 Optional:
 
 - `DIGEST_AUTH_REALM` (defaults to `Messenger JSON Viewer`)
+- `DIGEST_AUTH_DEBUG` — set to `1` to enable per-request debug logging for the auth middleware (logs stage, method, and URI mismatch details — never logs passwords or hashes)
+
+### Nonce expiry and repeated login prompts
+
+Each challenge nonce is valid for **5 minutes**. Once a nonce expires the server re-issues a `401` with `stale=true`, which tells the browser to retry the request automatically with the new nonce — without showing the login dialog again. You will only ever see the login dialog a second time if your actual credentials are wrong.
 
 ## Development Server
 
