@@ -1,9 +1,10 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
 const NONCE_MAX_AGE_MS = 5 * 60 * 1000
+const DEFAULT_REALM = 'Messenger JSON Viewer'
 
-function md5(value: string): string {
-  return createHash('md5').update(value).digest('hex')
+function hash(value: string): string {
+  return createHash('sha256').update(value).digest('hex')
 }
 
 function quote(value: string): string {
@@ -64,20 +65,27 @@ export default defineEventHandler((event) => {
   const config = useRuntimeConfig(event)
   const username = config.digestAuth?.username || process.env.DIGEST_AUTH_USERNAME
   const password = config.digestAuth?.password || process.env.DIGEST_AUTH_PASSWORD
-  const realm = config.digestAuth?.realm || process.env.DIGEST_AUTH_REALM || 'Messenger JSON Viewer'
-  const nonceSecret = config.digestAuth?.nonceSecret || process.env.DIGEST_AUTH_SECRET || password
+  const realm = config.digestAuth?.realm || process.env.DIGEST_AUTH_REALM || DEFAULT_REALM
+  const nonceSecret = config.digestAuth?.nonceSecret || process.env.DIGEST_AUTH_SECRET
 
   if (!username || !password || !nonceSecret) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Digest auth is not configured. Set DIGEST_AUTH_USERNAME, DIGEST_AUTH_PASSWORD, and DIGEST_AUTH_SECRET in .env'
+      statusMessage: 'Digest auth is not configured. Set DIGEST_AUTH_USERNAME, DIGEST_AUTH_PASSWORD, and DIGEST_AUTH_SECRET environment variables'
+    })
+  }
+
+  if (equalsConstantTime(nonceSecret, password)) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'DIGEST_AUTH_SECRET must be different from DIGEST_AUTH_PASSWORD'
     })
   }
 
   const challenge = () => {
     const nonce = createNonce(nonceSecret)
     const opaque = getOpaque(nonceSecret, realm)
-    const header = `Digest realm="${quote(realm)}", qop="auth", nonce="${nonce}", opaque="${opaque}", algorithm=MD5`
+    const header = `Digest realm="${quote(realm)}", qop="auth", nonce="${nonce}", opaque="${opaque}", algorithm=SHA-256`
     setResponseStatus(event, 401, 'Unauthorized')
     setHeader(event, 'WWW-Authenticate', header)
     return 'Unauthorized'
@@ -115,18 +123,20 @@ export default defineEventHandler((event) => {
   }
 
   const requestUrl = event.node.req.url || '/'
-  if (!equalsConstantTime(requestUser, username) || !equalsConstantTime(requestRealm, realm) || uri !== requestUrl) {
+  if (!equalsConstantTime(requestUser, username) || !equalsConstantTime(requestRealm, realm) || !equalsConstantTime(uri, requestUrl)) {
     return challenge()
   }
 
   const method = (event.node.req.method || 'GET').toUpperCase()
-  const ha1 = md5(`${username}:${realm}:${password}`)
-  const ha2 = md5(`${method}:${uri}`)
+  const ha1 = hash(`${username}:${realm}:${password}`)
+  const ha2 = hash(`${method}:${uri}`)
   const expectedResponse = qop
-    ? md5(`${ha1}:${nonce}:${nc}:${cnonce}:${qop}:${ha2}`)
-    : md5(`${ha1}:${nonce}:${ha2}`)
+    ? hash(`${ha1}:${nonce}:${nc}:${cnonce}:${qop}:${ha2}`)
+    : hash(`${ha1}:${nonce}:${ha2}`)
 
   if (!equalsConstantTime(response, expectedResponse)) {
     return challenge()
   }
+
+  return
 })
