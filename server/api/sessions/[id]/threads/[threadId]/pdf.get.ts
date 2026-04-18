@@ -41,7 +41,11 @@ const C_TITLE = '#1C1E21'
 // ---- Helpers ----
 
 function sanitizeFilename(name: string): string {
-  return (name.replace(/[/\\?%*:|"<>]/g, '-').trim() || 'chat').slice(0, 100)
+  // Strip path separators, special chars, and collapse traversal sequences
+  return (name
+    .replace(/[/\\?%*:|"<>]/g, '-')
+    .replace(/\.{2,}/g, '-')
+    .trim() || 'chat').slice(0, 100)
 }
 
 function getMessageLines(msg: Message): string[] {
@@ -238,8 +242,11 @@ export default defineEventHandler(async (event) => {
   const pdfBuffer = Buffer.concat(chunks)
   const filename = sanitizeFilename(threadName) + '.pdf'
 
+  // Use RFC 5987 encoding for the filename so non-ASCII characters (e.g. Japanese)
+  // are preserved correctly, while keeping an ASCII fallback for older clients.
+  const encodedFilename = encodeURIComponent(filename)
   setHeader(event, 'Content-Type', 'application/pdf')
-  setHeader(event, 'Content-Disposition', `attachment; filename="${filename}"`)
+  setHeader(event, 'Content-Disposition', `attachment; filename="chat.pdf"; filename*=UTF-8''${encodedFilename}`)
   setHeader(event, 'Content-Length', String(pdfBuffer.length))
 
   return pdfBuffer
