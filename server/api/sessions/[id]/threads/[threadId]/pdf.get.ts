@@ -65,6 +65,7 @@ export default defineEventHandler(async (event) => {
   if (!thread) throw createError({ statusCode: 404, statusMessage: 'Thread not found' })
 
   const { threadName, participants } = thread.summary
+  // Heuristic: treat the last participant as the "self" user (same logic as the frontend thread page)
   const selfName = participants.at(-1) ?? ''
   const messages: Message[] = thread.messages // chronological order
 
@@ -174,7 +175,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Timestamp
-    const timeStr = new Date(msg.timestamp).toLocaleTimeString([], {
+    const timeStr = new Date(msg.timestamp).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     })
@@ -206,7 +207,7 @@ export default defineEventHandler(async (event) => {
   // Messages grouped by date
   let lastDate = ''
   for (const msg of messages) {
-    const dateStr = new Date(msg.timestamp).toLocaleDateString([], {
+    const dateStr = new Date(msg.timestamp).toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
