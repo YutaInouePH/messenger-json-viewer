@@ -6,7 +6,7 @@ const router = useRouter()
 const id = route.params.id as string
 const threadId = route.params.threadId as string
 
-const { expiresAt, fetchMessages, mediaUrl, deleteCurrentSession } = useSession()
+const { expiresAt, fetchMessages, mediaUrl, deleteCurrentSession, sessionId } = useSession()
 
 const messages = ref<Message[]>([])
 const threadName = ref('')
@@ -128,6 +128,15 @@ useSeoMeta({ title: computed(() => threadName.value || 'Chat') })
       <p class="text-xs text-muted shrink-0">
         {{ totalMessages.toLocaleString() }} messages
       </p>
+      <UButton
+        icon="i-lucide-file-down"
+        variant="ghost"
+        color="neutral"
+        size="sm"
+        :href="`/api/sessions/${sessionId}/threads/${threadId}/pdf`"
+        target="_blank"
+        title="Export as PDF"
+      />
     </div>
 
     <!-- Session banner -->

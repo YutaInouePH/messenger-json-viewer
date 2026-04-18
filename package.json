@@ -15,12 +15,15 @@
     "@iconify-json/simple-icons": "^1.2.78",
     "@nuxt/ui": "^4.6.1",
     "mime": "^4.1.0",
+    "noto-sans-japanese": "^1.0.0",
     "nuxt": "^4.4.2",
+    "pdfkit": "^0.18.0",
     "tailwindcss": "^4.2.2",
     "unzipper": "^0.12.3"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
+    "@types/pdfkit": "^0.17.6",
     "@types/unzipper": "^0.10.11",
     "eslint": "^10.2.0",
     "typescript": "^6.0.2",
