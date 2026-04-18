@@ -1,6 +1,16 @@
+import { createRequire } from 'module'
 import { lookupSession, isExpired } from '../../../../../utils/sessionStore'
 import PDFDocument from 'pdfkit'
 import type { Message } from '../../../../../utils/types'
+
+// Resolve bundled Noto Sans JP OTF font paths at module load time.
+// NotoSansJP covers Latin, Japanese (hiragana, katakana, kanji/CJK ideographs).
+const _require = createRequire(import.meta.url)
+const FONT_REGULAR = _require.resolve('noto-sans-japanese/fonts/NotoSansJP-Regular.otf')
+const FONT_BOLD = _require.resolve('noto-sans-japanese/fonts/NotoSansJP-Bold.otf')
+
+const FONT = 'NotoSansJP'
+const FONT_B = 'NotoSansJP-Bold'
 
 // ---- Layout constants (A4) ----
 const PW = 595.28 // page width (pts)
@@ -71,6 +81,8 @@ export default defineEventHandler(async (event) => {
 
   // ---- Build the PDF ----
   const doc = new PDFDocument({ size: 'A4', margin: 0, autoFirstPage: true })
+  doc.registerFont(FONT, FONT_REGULAR)
+  doc.registerFont(FONT_B, FONT_BOLD)
   const chunks: Buffer[] = []
   doc.on('data', (chunk: Buffer) => chunks.push(chunk))
   const pdfDone = new Promise<void>((resolve, reject) => {
@@ -94,7 +106,7 @@ export default defineEventHandler(async (event) => {
   /** Pre-calculate the height a bubble needs for its content lines. */
   function calcBubbleHeight(lines: string[], bubbleWidth: number): number {
     const textWidth = bubbleWidth - BPX * 2
-    doc.font('Helvetica').fontSize(FS_TEXT)
+    doc.font(FONT).fontSize(FS_TEXT)
     let h = BPY * 2
     for (const line of lines) {
       h += doc.heightOfString(line, { width: textWidth })
@@ -106,7 +118,7 @@ export default defineEventHandler(async (event) => {
   function drawDateSeparator(dateStr: string) {
     ensureSpace(DATE_H)
     const midY = curY + DATE_H / 2
-    doc.font('Helvetica').fontSize(FS_META)
+    doc.font(FONT).fontSize(FS_META)
     const textW = doc.widthOfString(dateStr)
     const textX = (PW - textW) / 2
 
@@ -138,7 +150,7 @@ export default defineEventHandler(async (event) => {
 
     // Sender name (other only)
     if (!isOwn) {
-      doc.font('Helvetica').fontSize(FS_META).fillColor(C_META)
+      doc.font(FONT).fontSize(FS_META).fillColor(C_META)
         .text(msg.senderName, bubbleX + BPX, curY, { width: bubbleW - BPX, lineBreak: false })
       curY += FS_META + 4
     }
@@ -158,7 +170,7 @@ export default defineEventHandler(async (event) => {
     const textW = bubbleW - BPX * 2
     let textY = curY + BPY
 
-    doc.font('Helvetica').fontSize(FS_TEXT).fillColor(textColor)
+    doc.font(FONT).fontSize(FS_TEXT).fillColor(textColor)
     for (const line of lines) {
       doc.text(line, textX, textY, { width: textW, lineBreak: true })
       textY = doc.y
@@ -169,7 +181,7 @@ export default defineEventHandler(async (event) => {
     // Reactions
     if (msg.reactions.length > 0) {
       const rxStr = msg.reactions.map(r => r.reaction).join(' ')
-      doc.font('Helvetica').fontSize(FS_META + 1).fillColor(C_META)
+      doc.font(FONT).fontSize(FS_META + 1).fillColor(C_META)
         .text(rxStr, bubbleX + BPX, curY + 2, { width: bubbleW, lineBreak: false })
       curY += reactionsH
     }
@@ -179,7 +191,7 @@ export default defineEventHandler(async (event) => {
       hour: '2-digit',
       minute: '2-digit'
     })
-    doc.font('Helvetica').fontSize(FS_META).fillColor(C_META)
+    doc.font(FONT).fontSize(FS_META).fillColor(C_META)
     if (isOwn) {
       doc.text(timeStr, MX, curY + 2, { width: CW, align: 'right', lineBreak: false })
     } else {
@@ -192,11 +204,11 @@ export default defineEventHandler(async (event) => {
   // ---- Render ----
 
   // Title block
-  doc.font('Helvetica-Bold').fontSize(13).fillColor(C_TITLE)
+  doc.font(FONT_B).fontSize(13).fillColor(C_TITLE)
     .text(threadName, MX, curY, { width: CW, align: 'center', lineBreak: false })
   curY += 18
 
-  doc.font('Helvetica').fontSize(FS_META).fillColor(C_META)
+  doc.font(FONT).fontSize(FS_META).fillColor(C_META)
     .text(participants.join(', '), MX, curY, { width: CW, align: 'center', lineBreak: false })
   curY += 14
 
